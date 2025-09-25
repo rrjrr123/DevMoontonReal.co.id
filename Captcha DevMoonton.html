@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>NECaptcha Token Collector</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cstaticdun.126.net/load.min.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background-color: #f2f2f2;
+    }
+
+    header {
+      background-color: #4A90E2;
+      color: white;
+      padding: 15px;
+      text-align: center;
+      font-size: 20px;
+    }
+
+    .section {
+      background-color: white;
+      margin: 15px;
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    }
+
+    .section h2 {
+      text-align: center;
+      color: #333;
+      font-size: 18px;
+      margin-bottom: 15px;
+    }
+
+    .captcha-container {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .captcha-box {
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .footer {
+      position: sticky;
+      bottom: 0;
+      background: #fff;
+      border-top: 1px solid #ccc;
+      padding: 10px 15px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 14px;
+      gap: 10px;
+    }
+
+    .counter {
+      font-weight: bold;
+      color: #333;
+    }
+
+    button {
+      padding: 8px 14px;
+      background-color: #4A90E2;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #3b78c4;
+    }
+
+    .log-section {
+      background: white;
+      margin: 15px;
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    }
+
+    textarea {
+      width: 100%;
+      height: 150px;
+      resize: none;
+      padding: 10px;
+      font-family: monospace;
+      font-size: 14px;
+    }
+
+    .log-buttons {
+      margin-top: 10px;
+      display: flex;
+      gap: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    NECaptcha Token Collector (MLBB + Mc-GoGo)
+  </header>
+
+  <!-- MLBB CAPTCHA Section -->
+  <div class="section">
+    <h2>MLBB</h2>
+    <div class="captcha-container">
+      <div class="captcha-box" id="mlbb1"></div>
+      <div class="captcha-box" id="mlbb2"></div>
+      <div class="captcha-box" id="mlbb3"></div>
+    </div>
+  </div>
+
+  <!-- Mc-GoGo CAPTCHA Section -->
+  <div class="section">
+    <h2>Mc-GoGo</h2>
+    <div class="captcha-container">
+      <div class="captcha-box" id="mcgogo1"></div>
+      <div class="captcha-box" id="mcgogo2"></div>
+      <div class="captcha-box" id="mcgogo3"></div>
+    </div>
+  </div>
+
+  <!-- Token Log Section -->
+  <div class="log-section">
+    <h2>Hasil Token</h2>
+    <textarea id="tokenLog" readonly placeholder="Token akan muncul di sini..."></textarea>
+    <div class="log-buttons">
+      <button onclick="copyTokens()">Salin Semua</button>
+      <button onclick="cutTokens()">Hapus Semua</button>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <div class="counter">Jumlah Token: <span id="tokenCount">0</span></div>
+    <button id="downloadTokens">Unduh Token</button>
+  </div>
+
+  <script>
+    const TELEGRAM_BOT_TOKEN = "8478188108:AAEqSPjMHrFNu_AcLo9rzTmlGXl6jM7tQFI";
+    const AUTHORIZED_USER_ID = 7879404400;
+
+    let tokens = [];
+
+    function updateCounter() {
+      document.getElementById("tokenCount").innerText = tokens.length;
+      document.getElementById("tokenLog").value = tokens.join("\n");
+    }
+
+    function sendToTelegram(token) {
+      const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+      const data = {
+        chat_id: AUTHORIZED_USER_ID,
+        text: token,
+        parse_mode: "HTML"
+      };
+
+      fetch(url, {
+        method: "POST",
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+      }).catch(error => {
+        console.error("Gagal kirim ke Telegram:", error);
+      });
+    }
+
+    function loadCaptcha(captchaId, elementId) {
+      initNECaptcha({
+        captchaId: captchaId,
+        element: elementId,
+        mode: "embed",
+        width: "100%",
+        onVerify: function (err, data) {
+          if (!err) {
+            const token = data.validate;
+            tokens.push(token);
+            updateCounter();
+            sendToTelegram(token);
+            loadCaptcha(captchaId, elementId); // Reload CAPTCHA
+          }
+        }
+      });
+    }
+
+    // Load Captchas
+    const mlbbKey = "fef5c67c39074e9d845f4bf579cc07af";
+    loadCaptcha(mlbbKey, "#mlbb1");
+    loadCaptcha(mlbbKey, "#mlbb2");
+    loadCaptcha(mlbbKey, "#mlbb3");
+
+    const mcgogoKey = "e97c361cdefd4e4db32fcb8d590ae44a";
+    loadCaptcha(mcgogoKey, "#mcgogo1");
+    loadCaptcha(mcgogoKey, "#mcgogo2");
+    loadCaptcha(mcgogoKey, "#mcgogo3");
+
+    // Unduh Token
+    document.getElementById('downloadTokens').addEventListener('click', function () {
+      if (tokens.length === 0) {
+        alert('Belum ada token yang dikumpulkan.');
+        return;
+      }
+      const blob = new Blob([tokens.join("\n")], { type: 'text/plain' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'tokens.txt';
+      link.click();
+    });
+
+    // Salin semua token
+    function copyTokens() {
+      const textarea = document.getElementById("tokenLog");
+      textarea.select();
+      document.execCommand("copy");
+      alert("Token disalin ke clipboard.");
+    }
+
+    // Hapus (salin lalu kosongkan)
+    function cutTokens() {
+      const textarea = document.getElementById("tokenLog");
+      textarea.select();
+      document.execCommand("cut");
+      tokens = [];
+      updateCounter();
+      alert("Token diHapus dan clipboard disalin.");
+    }
+  </script>
+</body>
+</html>
